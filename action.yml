@@ -1,0 +1,144 @@
+name: secretsweep
+description: >-
+  Fail the build when credentials leak into the tree. 86 provider rules, entropy
+  detection, placeholder triage and baseline gating. Zero dependencies: the
+  action runs the checked-out Python source directly, so it installs nothing.
+author: xuange-hu
+
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  path:
+    description: File or directory to scan.
+    required: false
+    default: "."
+  fail-on:
+    description: >-
+      Severity at or above which the check fails: critical, high, medium, low,
+      info, or none to never fail.
+    required: false
+    default: high
+  min-severity:
+    description: Hide findings below this level before counting.
+    required: false
+    default: info
+  baseline:
+    description: >-
+      Baseline file. When set, only findings absent from the baseline are
+      reported, so an old repo can adopt the gate without a big-bang cleanup.
+    required: false
+    default: ""
+  sarif:
+    description: Write SARIF 2.1.0 to this path (for code scanning upload).
+    required: false
+    default: ""
+  json:
+    description: Emit JSON on stdout instead of the text report.
+    required: false
+    default: "false"
+  show-placeholders:
+    description: Also report documented example values.
+    required: false
+    default: "false"
+  no-ignore-file:
+    description: Do not read .secretsweepignore from the scan root.
+    required: false
+    default: "false"
+  no-inline-ignore:
+    description: Ignore `secretsweep:ignore` directives.
+    required: false
+    default: "false"
+  history:
+    description: Scan git history instead of the working tree.
+    required: false
+    default: "false"
+  max-commits:
+    description: History depth when `history` is enabled.
+    required: false
+    default: "500"
+  entropy-min:
+    description: Raise every rule's entropy gate.
+    required: false
+    default: ""
+  max-bytes:
+    description: Skip files larger than this many bytes.
+    required: false
+    default: ""
+  tag:
+    description: Only run rules carrying this tag. Comma separated.
+    required: false
+    default: ""
+  exclude-rule:
+    description: Rule ids to skip. Comma separated.
+    required: false
+    default: ""
+  skip-dir:
+    description: Extra directory names to skip. Comma separated.
+    required: false
+    default: ""
+  ignore-glob:
+    description: Extra path globs to skip. Comma separated.
+    required: false
+    default: ""
+  extra-args:
+    description: Additional CLI flags passed through verbatim.
+    required: false
+    default: ""
+  python-version:
+    description: Python used to run the scanner. Any interpreter works; there are no dependencies.
+    required: false
+    default: "3.x"
+
+outputs:
+  findings:
+    description: Number of findings reported (after baseline filtering).
+    value: ${{ steps.secretsweep.outputs.findings }}
+  max-severity:
+    description: "Highest severity seen, or `none`."
+    value: ${{ steps.secretsweep.outputs.max-severity }}
+  files-scanned:
+    description: Number of files read.
+    value: ${{ steps.secretsweep.outputs.files-scanned }}
+  exit-code:
+    description: "0 = clean, 1 = findings at or above `fail-on`."
+    value: ${{ steps.secretsweep.outputs.exit-code }}
+  report:
+    description: The human-readable report.
+    value: ${{ steps.secretsweep.outputs.report }}
+  sarif:
+    description: Path written when the `sarif` input was set.
+    value: ${{ steps.secretsweep.outputs.sarif }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Sweep for credentials
+      id: secretsweep
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_MIN_SEVERITY: ${{ inputs.min-severity }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_JSON: ${{ inputs.json }}
+        INPUT_SHOW_PLACEHOLDERS: ${{ inputs.show-placeholders }}
+        INPUT_NO_IGNORE_FILE: ${{ inputs.no-ignore-file }}
+        INPUT_NO_INLINE_IGNORE: ${{ inputs.no-inline-ignore }}
+        INPUT_HISTORY: ${{ inputs.history }}
+        INPUT_MAX_COMMITS: ${{ inputs.max-commits }}
+        INPUT_ENTROPY_MIN: ${{ inputs.entropy-min }}
+        INPUT_MAX_BYTES: ${{ inputs.max-bytes }}
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_EXCLUDE_RULE: ${{ inputs.exclude-rule }}
+        INPUT_SKIP_DIR: ${{ inputs.skip-dir }}
+        INPUT_IGNORE_GLOB: ${{ inputs.ignore-glob }}
+        INPUT_EXTRA_ARGS: ${{ inputs.extra-args }}
+      run: python "$GITHUB_ACTION_PATH/entrypoint.py"

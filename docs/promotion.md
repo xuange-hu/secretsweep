@@ -84,7 +84,8 @@ Curious what breaks for you: which false positive class is worst in your repos?
 3/ 同一个字符串在 docs/example.env 和 .github/workflows/deploy.yml 里不是一个风险。每条 finding 带 bucket，严重级据此调整。
 4/ 离线推断能力：AKIA 长期密钥 / ASIA 临时会话 / AGPA 不能签名；ghp_ 无法限定仓库；JWT 过期自动降级。不外联任何厂商。
 5/ 基线：`secretsweep baseline .` → `scan --baseline`。挪行不失效，新密钥一定挂。
-6/ `pip install secretsweep`。MIT。
+6/ 另有一个 GitHub Action：`uses: xuange-hu/secretsweep@v1`。它**不装任何东西** —— 直接跑 checkout 下来的源码。凭据扫描器往你的 CI 里塞一整棵依赖树，说不过去。
+7/ `pip install secretsweep`。MIT。
 
 ## Awesome 清单提交用简介（英文，60–120 词）
 
@@ -93,7 +94,8 @@ Curious what breaks for you: which false positive class is worst in your repos?
 > PEM/JWT) plus entropy-gated generic assignments. Distinguishes real leaks from
 > documented examples using value-shape triage, adjusts severity by path context,
 > infers what each credential can do offline, and supports fingerprint baselines
-> so CI fails only on new leaks. SARIF 2.1.0, MCP server, MIT.
+> so CI fails only on new leaks. SARIF 2.1.0, MCP server, and a GitHub Action
+> that installs nothing. MIT.
 
 可投清单：awesome-python-security、awesome-devsecops、awesome-mcp-servers、
 awesome-secret-management、awesome-supply-chain-security。

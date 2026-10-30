@@ -3,7 +3,7 @@
 [English] · [简体中文](README_CN.md)
 
 [![CI](https://github.com/xuange-hu/secretsweep/actions/workflows/ci.yml/badge.svg)](https://github.com/xuange-hu/secretsweep/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-405-brightgreen)](#coverage)
+[![tests](https://img.shields.io/badge/tests-428-brightgreen)](#coverage)
 [![python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#zero-dependencies)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -155,6 +155,55 @@ scanning with the right ranking.
 
 ---
 
+## GitHub Action
+
+```yaml
+- uses: xuange-hu/secretsweep@v1
+  with:
+    path: .
+    fail-on: high
+    baseline: .secretsweep-baseline.json   # optional
+    sarif: secrets.sarif.json              # optional
+```
+
+The action installs **nothing**: it runs the checked-out Python source with the
+runner's interpreter. A credential scanner that pulled a dependency tree into
+your CI would be working against its own purpose.
+
+| input | default | purpose |
+|---|---|---|
+| `path` | `.` | file or directory to scan |
+| `fail-on` | `high` | `critical`/`high`/`medium`/`low`/`info`/`none` |
+| `baseline` | — | only fail on findings absent from the baseline |
+| `sarif` | — | write SARIF 2.1.0 for code scanning upload |
+| `min-severity` | `info` | hide findings below this level |
+| `tag`, `exclude-rule` | — | comma separated rule selection |
+| `history` | `false` | scan `git log -p` instead of the working tree |
+| `extra-args` | — | any CLI flag, passed through verbatim |
+
+Outputs: `findings`, `max-severity`, `files-scanned`, `exit-code`, `report`,
+`sarif`. The report is also written to the job summary, capped at 64 KB so a
+noisy run cannot drown the log.
+
+```yaml
+- uses: xuange-hu/secretsweep@v1
+  id: sweep
+  continue-on-error: true
+  with:
+    path: .
+- name: Upload
+  if: always()
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: ${{ steps.sweep.outputs.sarif }}
+```
+
+`action-test.yml` runs the action against a tree that leaks on purpose and
+asserts that it fails, so a regression in the action breaks CI here rather than
+in your workflow.
+
+---
+
 ## MCP server
 
 ```bash
@@ -209,6 +258,7 @@ optional extra and is the only entry in it.
 | `sarif.py` | SARIF 2.1.0 |
 | `report.py` | text and JSON rendering |
 | `samples.py` | one trigger sample per rule |
+| `entrypoint.py` | GitHub Action entrypoint (reuses the CLI parser, no deps) |
 
 ---
 

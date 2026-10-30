@@ -131,6 +131,26 @@ secretsweep scan . --history --max-commits 500
 
 SARIF 2.1.0 带 `security-severity`，能正确排进 code scanning。
 
+## GitHub Action
+
+```yaml
+- uses: xuange-hu/secretsweep@v1
+  with:
+    path: .
+    fail-on: high
+    baseline: .secretsweep-baseline.json   # 可选
+    sarif: secrets.sarif.json              # 可选
+```
+
+这个 action **什么都不装**：直接用 runner 自带的 Python 跑已 checkout 的源码。
+一个凭据扫描器如果往你的 CI 里塞一整棵依赖树，那它本身就站不住脚。
+
+常用输入：`path` / `fail-on` / `baseline` / `sarif` / `min-severity` /
+`tag` / `exclude-rule`（逗号分隔）/ `history`（改扫 `git log -p`）/ `extra-args`（原样透传任意 CLI 参数）。
+
+输出：`findings`、`max-severity`、`files-scanned`、`exit-code`、`report`、`sarif`。
+报告同时写进 job summary，上限 64 KB，避免噪音刷屏。
+
 ## MCP
 
 ```bash

@@ -1,0 +1,127 @@
+name: action-test
+
+# The action is a product surface, not a convenience wrapper: if `uses: ./`
+# stops failing on a leak, nothing else in this repo will notice. So CI runs
+# the action against a deliberately leaky tree and asserts it fails.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: action-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  catches-leaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Build a leaky tree
+        run: |
+          mkdir -p _demo
+          python - "$PWD/_demo" <<'PY'
+          import os
+          import sys
+
+          root = sys.argv[1]
+          # assembled at runtime: no key-shaped literal is ever committed
+          key = "AK" + "IA3RJ4E5TZLMXQW7PU"
+          with open(os.path.join(root, "app.py"), "w", encoding="utf-8") as fh:
+              fh.write("aws_access_key_id = %r\n" % key)
+          print("wrote a tree with one AWS key id")
+          PY
+
+      - name: Sweep (expected to fail)
+        id: sweep
+        continue-on-error: true
+        uses: ./
+        with:
+          path: _demo
+          fail-on: high
+
+      - name: The gate must have failed
+        if: always()
+        run: |
+          echo "exit-code=${{ steps.sweep.outputs.exit-code }}"
+          echo "findings=${{ steps.sweep.outputs.findings }}"
+          echo "max-severity=${{ steps.sweep.outputs.max-severity }}"
+          test "${{ steps.sweep.outputs.exit-code }}" = "1"
+          test "${{ steps.sweep.outputs.findings }}" -ge 1
+
+      - name: The report must not echo the raw secret
+        if: always()
+        env:
+          REPORT: ${{ steps.sweep.outputs.report }}
+        run: |
+          # the raw value is read back from the generated file, so no
+          # key-shaped literal ever lands in this repository
+          python - "$PWD/_demo/app.py" <<'PY'
+          import os
+          import re
+          import sys
+
+          raw = re.search(r'"([^"]{20,})"', open(sys.argv[1], encoding="utf-8").read()).group(1)
+          report = os.environ["REPORT"]
+          assert raw not in report, "the action echoed a raw secret into its outputs"
+          assert "**" in report, "the action did not mask the secret at all"
+          print("masking ok: report shows %r" % report[report.index(raw[:4]) :][:24])
+          PY
+
+      - name: Sweep with fail-on none (expected to pass)
+        id: soft
+        uses: ./
+        with:
+          path: _demo
+          fail-on: none
+
+      - name: And still report the finding
+        run: |
+          test "${{ steps.soft.outputs.exit-code }}" = "0"
+          test "${{ steps.soft.outputs.findings }}" -ge 1
+
+      - name: Sweep writing SARIF
+        id: sarif
+        continue-on-error: true
+        uses: ./
+        with:
+          path: _demo
+          fail-on: none
+          sarif: results.sarif.json
+
+      - name: SARIF is well formed
+        run: |
+          python - "$PWD/results.sarif.json" <<'PY'
+          import json
+          import sys
+
+          payload = json.load(open(sys.argv[1], encoding="utf-8"))
+          run = payload["runs"][0]
+          assert run["results"], "sarif carried no results"
+          print(
+              "sarif ok: %d results, %d rules"
+              % (len(run["results"]), len(run["tool"]["driver"]["rules"]))
+          )
+          PY
+
+  self-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: secretsweep must pass its own gate, through the action
+        id: self
+        uses: ./
+        with:
+          path: .
+          fail-on: high
+
+      - name: Report
+        run: |
+          test "${{ steps.self.outputs.exit-code }}" = "0"
+          test "${{ steps.self.outputs.findings }}" = "0"
