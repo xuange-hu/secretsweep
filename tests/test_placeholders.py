@@ -72,6 +72,37 @@ def test_identifier_paths_are_placeholders():
         assert classify_value(value)[0] == "placeholder", value
 
 
+def test_snake_case_identifiers_are_placeholders():
+    """Found by dogfooding on vehsec: `elif oid == _EXT_KEY_USAGE` is not a leak."""
+    for value in ("_parse_key_usage", "load_private_key", "get_secret_name"):
+        assert classify_value(value)[0] == "placeholder", value
+
+
+def test_snake_case_rule_does_not_swallow_hex_bearing_tokens():
+    # dop_v1_<64 hex> is a DigitalOcean token, not a Python identifier
+    assert classify_value("dop_v1_" + "a3f9c1e7" * 8)[0] == "likely"
+
+
+def test_hex_digests_next_to_hash_words_are_placeholders():
+    """Found by dogfooding on mcplock: `surface_digest` is a hash, not a secret."""
+    value = "a3f9c1e75b2d8406e91c47af3d6b25f87ac018be2f5e93d4b6407c198e1d4a52"
+    for line in (
+        f'"surface_digest": "{value}"',
+        f"sha256sum = {value}",
+        f"expected_fingerprint = {value}",
+        f"etag: {value}",
+    ):
+        confidence, reasons = triage(value, line)
+        assert confidence == "placeholder", line
+        assert "hash-context" in reasons
+
+
+def test_hex_blobs_without_hash_context_stay_likely():
+    value = "a3f9c1e75b2d8406e91c47af3d6b25f87ac018be2f5e93d4b6407c198e1d4a52"
+    confidence, _ = triage(value, f'blob = "{value}"')
+    assert confidence == "likely"
+
+
 def test_random_material_is_likely():
     confidence, reasons = classify_value(RANDOM)
     assert confidence == "likely"

@@ -81,6 +81,18 @@ KNOWN_EXAMPLES = frozenset(
 TEMPLATE_PREFIXES = ("${", "{{", "<%", "%(", "$(", "#{")
 TEMPLATE_TOKENS = ("process.env", "os.environ", "getenv", "envsubst", "secrets.", "vault:", "op://", "sm://")
 
+# `_parse_key_usage`, `load_private_key`: a lowercase snake_case identifier is
+# code, not a credential. Real secrets do not spell words with underscores, and
+# requiring the underscore keeps lowercase hex/alphnum tokens in play.
+SNAKE_IDENT_RE = re.compile(r"^_?[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")
+
+# `surface_digest`, `sha256`, `etag`: a bare hex blob next to a hash-ish word is
+# a digest. This is the single most common false positive in real repositories.
+HASH_CONTEXT_RE = re.compile(
+    r"(?i)(sha(?:1|224|256|384|512)?[\s_-]*(?:sum|hash|digest)?|hash|digest|checksum|fingerprint|etag|md5|blake2?[\s_-]?[0-9]*b?)"
+)
+HEX_ONLY_RE = re.compile(r"[0-9a-f]{32}|[0-9a-f]{40}|[0-9a-f]{64}")
+
 # `secretsweep.cli:main`, `pkg.module.func`, `path/to/thing`: a dotted or slashed
 # identifier is a reference, not a credential. `-` is deliberately not a
 # separator here: `key-a3f9c1e7...` and `xoxb-123-456` are credentials.
@@ -142,6 +154,15 @@ def classify_value(value: str) -> tuple[str, tuple[str, ...]]:
     if reasons:
         return "placeholder", tuple(reasons)
 
+    if (
+        SNAKE_IDENT_RE.match(stripped)
+        and shannon_entropy(stripped) < 4.2
+        # `dop_v1_<64 hex>` is a DigitalOcean token, not an identifier: a long
+        # hex run anywhere in the value disqualifies the "it is code" reading.
+        and not re.search(r"[0-9a-f]{8,}", stripped)
+    ):
+        return "placeholder", ("snake-case-identifier",)
+
     if IDENTIFIER_PATH_RE.match(stripped):
         # A module path is only "not a secret" while it still reads like one:
         # short segments, low entropy. A JWT has dots too and must not qualify.
@@ -169,6 +190,8 @@ def triage(value: str, line: str) -> tuple[str, tuple[str, ...]]:
     confidence, reasons = classify_value(value)
     if confidence == "placeholder":
         return confidence, reasons
+    if HASH_CONTEXT_RE.search(line) and HEX_ONLY_RE.fullmatch(value.strip().lower()):
+        return "placeholder", ("hash-context",)
     reason = line_placeholder_reason(line)
     if reason:
         return "placeholder", (reason, *reasons)

@@ -149,7 +149,7 @@ RULE_SAMPLES: dict[str, str] = {
     "generic-password-assignment": 'password = "Xk9#mQ2vLpR7wZ"',
     "env-file-secret": f'export DEPLOY_WEBHOOK_SECRET = "{_C1}{_C2[:4]}"',
     # --- entropy
-    "hex-secret-64": f'digest = "{HEX64}"',
+    "hex-secret-64": f'blob = "{HEX64}"',
     "base64-secret-40": f'hmac_signing blob = "{S40}"',
 }
 
