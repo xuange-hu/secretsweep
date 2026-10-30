@@ -33,7 +33,7 @@ jobs:
           # assembled at runtime: no key-shaped literal is ever committed
           key = "AK" + "IA3RJ4E5TZLMXQW7PU"
           with open(os.path.join(root, "app.py"), "w", encoding="utf-8") as fh:
-              fh.write("aws_access_key_id = %r\n" % key)
+              fh.write('aws_access_key_id = "%s"\n' % key)
           print("wrote a tree with one AWS key id")
           PY
 
@@ -66,7 +66,10 @@ jobs:
           import re
           import sys
 
-          raw = re.search(r'"([^"]{20,})"', open(sys.argv[1], encoding="utf-8").read()).group(1)
+          text = open(sys.argv[1], encoding="utf-8").read()
+          raw = re.search(r"""['"]([^'"]{20,})['"]""", text)
+          assert raw is not None, "could not read the planted value back"
+          raw = raw.group(1)
           report = os.environ["REPORT"]
           assert raw not in report, "the action echoed a raw secret into its outputs"
           assert "**" in report, "the action did not mask the secret at all"

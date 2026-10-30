@@ -3,7 +3,7 @@
 [English] · [简体中文](README_CN.md)
 
 [![CI](https://github.com/xuange-hu/secretsweep/actions/workflows/ci.yml/badge.svg)](https://github.com/xuange-hu/secretsweep/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-434-brightgreen)](#coverage)
+[![tests](https://img.shields.io/badge/tests-435-brightgreen)](#coverage)
 [![python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#zero-dependencies)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)

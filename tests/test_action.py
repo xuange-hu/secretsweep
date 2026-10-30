@@ -16,6 +16,8 @@ import importlib.util
 import json
 import os
 import re
+import sys
+import textwrap
 
 import pytest
 
@@ -318,3 +320,50 @@ def test_action_agrees_with_the_cli(action, leaky, capsys):
     cli_mod.main(["scan", str(leaky), "--json"])
     payload = json.loads(capsys.readouterr().out)
     assert payload["stats"]["findings"] == int(outputs["findings"])
+
+
+def heredoc_blocks(text: str) -> list[str]:
+    """Pull the `python - <<'PY' ... PY` scripts out of a workflow file."""
+    blocks: list[str] = []
+    buffer: list[str] | None = None
+    for line in text.splitlines():
+        if buffer is None:
+            if line.strip().endswith("<<'PY'"):
+                buffer = []
+            continue
+        if line.strip() == "PY":
+            # the body is indented to the YAML step; strip that common prefix
+            blocks.append(textwrap.dedent("\n".join(buffer)))
+            buffer = None
+        else:
+            buffer.append(line)
+    return blocks
+
+
+def test_action_test_workflow_scripts_still_agree(tmp_path, monkeypatch):
+    """The workflow plants a secret, then asserts the report masked it.
+
+    Those live in two separate heredocs, so nothing stops one from changing
+    quoting without the other noticing - which is exactly how the first
+    action-test run went red: the plant wrote `'AKIA...'` (repr) while the
+    check only looked for `"..."`. Running them against each other here keeps
+    them honest without pushing a commit to find out.
+    """
+    workflow = os.path.join(ROOT, ".github", "workflows", "action-test.yml")
+    with open(workflow, encoding="utf-8") as fh:
+        blocks = heredoc_blocks(fh.read())
+    assert len(blocks) >= 2, "expected the plant script and the masking check"
+
+    demo = tmp_path / "_demo"
+    demo.mkdir()
+    monkeypatch.setattr(sys, "argv", ["plant", str(demo)])
+    exec(compile(blocks[0], "plant.py", "exec"), {"__name__": "__main__"})
+
+    planted = (demo / "app.py").read_text(encoding="utf-8")
+    value = re.search(r"=\s*['\"]([^'\"]+)['\"]", planted).group(1)
+    assert value.startswith("AKIA")
+
+    masked = value[:4] + "*" * 12 + value[-2:]
+    monkeypatch.setenv("REPORT", f"  HIGH  1:22  aws-access-key-id  {masked}\n> {masked}")
+    monkeypatch.setattr(sys, "argv", ["check", str(demo / "app.py")])
+    exec(compile(blocks[1], "check.py", "exec"), {"__name__": "__main__"})
