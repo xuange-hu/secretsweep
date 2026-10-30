@@ -147,7 +147,16 @@ def repo_root(path: str) -> str | None:
 
 
 def relpath(path: str, root: str) -> str:
+    """Return `path` relative to `root`, always with forward slashes.
+
+    Separators are normalized *before* the relative computation, not after.
+    git always emits posix paths, and a scanner that reports `b/c.py` on Linux
+    but `../a/b/c.py` on Windows for the same input is not reporting the same
+    scan - the finding path is what baselines and diffs are keyed on.
+    """
+    posix_path = path.replace("\\", "/")
+    posix_root = root.replace("\\", "/")
     try:
-        return os.path.relpath(path, root).replace("\\", "/")
+        return os.path.relpath(posix_path, posix_root).replace("\\", "/")
     except ValueError:  # pragma: no cover - different drives on Windows
-        return path.replace("\\", "/")
+        return posix_path

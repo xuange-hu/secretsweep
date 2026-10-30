@@ -101,6 +101,13 @@ def test_relpath_is_posix():
     assert hist.relpath("a\\b\\c.py", "a") == "b/c.py"
 
 
+def test_relpath_does_not_depend_on_the_host_separator():
+    # git emits forward slashes everywhere; the reported path must not change
+    # shape when the scanner runs on Windows CI instead of Linux CI
+    assert hist.relpath("a/b/c.py", "a") == hist.relpath("a\\b\\c.py", "a") == "b/c.py"
+    assert hist.relpath("/repo/src/app.py", "/repo") == "src/app.py"
+
+
 def test_this_project_is_a_git_repo_or_git_is_missing():
     """Sanity: the helpers must agree with whatever the environment offers."""
     if hist.git_available():
