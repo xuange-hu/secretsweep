@@ -6,7 +6,7 @@
 不是"扫一遍出报告"的工具，而是能长期挂在 PR 门禁上的工具。
 
 ```bash
-pip install secretsweep        # 或 uvx secretsweep
+pip install secretsweep-audit  # 或 uvx --from secretsweep-audit secretsweep
 secretsweep demo               # 先看它在一个故意泄露的仓库上跑
 secretsweep scan .
 ```
@@ -14,7 +14,7 @@ secretsweep scan .
 ## 三步跑通
 
 ```text
-1. pip install secretsweep
+1. pip install secretsweep-audit
 2. secretsweep demo                 # 无需联网、无需 git，直接看到输出
 3. secretsweep scan .               # 扫自己的工程
 ```
@@ -121,7 +121,7 @@ secretsweep scan . --history --max-commits 500
 
 ```yaml
 - run: |
-    pip install secretsweep
+    pip install secretsweep-audit
     secretsweep scan . --baseline .secretsweep-baseline.json --sarif secrets.sarif.json
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
@@ -154,7 +154,7 @@ SARIF 2.1.0 带 `security-severity`，能正确排进 code scanning。
 ## MCP
 
 ```bash
-pip install "secretsweep[mcp]"
+pip install "secretsweep-audit[mcp]"
 secretsweep-mcp
 ```
 
@@ -167,7 +167,7 @@ secretsweep-mcp
   "mcpServers": {
     "secretsweep": {
       "command": "uvx",
-      "args": ["--from", "secretsweep[mcp]", "secretsweep-mcp"]
+      "args": ["--from", "secretsweep-audit[mcp]", "secretsweep-mcp"]
     }
   }
 }

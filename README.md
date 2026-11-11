@@ -13,7 +13,7 @@ placeholder triage, and baseline diffs that make it usable as a PR gate instead
 of a one-off report.
 
 ```bash
-pip install secretsweep            # or: uvx secretsweep
+pip install secretsweep-audit      # or: uvx --from secretsweep-audit secretsweep
 secretsweep scan .
 ```
 
@@ -27,7 +27,7 @@ import-free package, deterministic, fast enough to run on every commit.
 ## Three steps
 
 ```bash
-pip install secretsweep
+pip install secretsweep-audit
 secretsweep demo                   # 1. see it work on a repo that leaks on purpose
 secretsweep scan .                 # 2. scan your own tree
 ```
@@ -142,7 +142,7 @@ tests/**
 ```yaml
 - name: secret scan
   run: |
-    pip install secretsweep
+    pip install secretsweep-audit
     secretsweep scan . --baseline .secretsweep-baseline.json --sarif secrets.sarif.json
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
@@ -207,7 +207,7 @@ in your workflow.
 ## MCP server
 
 ```bash
-pip install "secretsweep[mcp]"
+pip install "secretsweep-audit[mcp]"
 secretsweep-mcp
 ```
 
@@ -229,7 +229,7 @@ Claude Code / Cursor / Cline config:
   "mcpServers": {
     "secretsweep": {
       "command": "uvx",
-      "args": ["--from", "secretsweep[mcp]", "secretsweep-mcp"]
+      "args": ["--from", "secretsweep-audit[mcp]", "secretsweep-mcp"]
     }
   }
 }

@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "secretsweep"
+name = "secretsweep-audit"
 version = "0.1.0"
 description = "Zero-dependency credential leak scanner: 70+ provider rules, entropy detection, placeholder triage, baseline diffs for PR gates, SARIF and MCP"
 readme = "README.md"

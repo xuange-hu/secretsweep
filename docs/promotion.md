@@ -1,7 +1,7 @@
 # 传播文案（发布动作需本人确认，自动化不代发）
 
 仓库：https://github.com/xuange-hu/secretsweep
-PyPI：`pip install secretsweep` / MCP：`uvx --from "secretsweep[mcp]" secretsweep-mcp`
+PyPI：`pip install secretsweep-audit` / MCP：`uvx --from "secretsweep-audit[mcp]" secretsweep-mcp`
 
 ## 一句话
 
@@ -85,7 +85,7 @@ Curious what breaks for you: which false positive class is worst in your repos?
 4/ 离线推断能力：AKIA 长期密钥 / ASIA 临时会话 / AGPA 不能签名；ghp_ 无法限定仓库；JWT 过期自动降级。不外联任何厂商。
 5/ 基线：`secretsweep baseline .` → `scan --baseline`。挪行不失效，新密钥一定挂。
 6/ 另有一个 GitHub Action：`uses: xuange-hu/secretsweep@v1`。它**不装任何东西** —— 直接跑 checkout 下来的源码。凭据扫描器往你的 CI 里塞一整棵依赖树，说不过去。
-7/ `pip install secretsweep`。MIT。
+7/ `pip install secretsweep-audit`。MIT。
 
 ## Awesome 清单提交用简介（英文，60–120 词）
 
