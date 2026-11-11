@@ -113,3 +113,19 @@ def test_every_tool_returns_a_string(name):
         assert isinstance(fn("/definitely/not/here", "{}"), str)
     else:
         assert isinstance(fn("/definitely/not/here"), str)
+
+
+def test_served_tools_match_manifest_with_descriptions():
+    """The names an agent calls must be the names the manifest promises, and
+    FastMCP serves an empty description when the registered function has no
+    docstring - an unidentified tool is an uncallable tool."""
+    pytest.importorskip("mcp")
+    import asyncio
+
+    server = mcp_server.create_server()
+    tools = asyncio.run(server.list_tools())
+    served = {t.name for t in tools}
+    manifest = {t["name"] for t in mcp_server.tool_manifest()}
+    assert served == manifest, f"only served: {served - manifest}; only manifest: {manifest - served}"
+    for t in tools:
+        assert (t.description or "").strip(), f"{t.name} has no description"

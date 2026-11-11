@@ -8,7 +8,7 @@
 git clone https://github.com/xuange-hu/secretsweep
 cd secretsweep
 pip install -e ".[mcp]" pytest ruff
-pytest                 # 435 tests
+pytest                 # 436 tests
 ruff check src tests
 ```
 
