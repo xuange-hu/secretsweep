@@ -24,6 +24,25 @@ import-free package, deterministic, fast enough to run on every commit.
 
 ---
 
+## Contents
+
+- [Three steps](#three-steps)
+- [What it does differently](#what-it-does-differently)
+  - [1. It separates real leaks from documented examples](#1-it-separates-real-leaks-from-documented-examples)
+  - [2. It reads the room, not just the string](#2-it-reads-the-room-not-just-the-string)
+  - [3. It tells you what the credential can do](#3-it-tells-you-what-the-credential-can-do)
+  - [4. Baselines: the only way this survives an old repository](#4-baselines-the-only-way-this-survives-an-old-repository)
+- [Commands](#commands)
+  - [Inline suppressions](#inline-suppressions)
+  - [.secretsweepignore](#secretsweepignore)
+- [CI](#ci)
+- [GitHub Action](#github-action)
+- [MCP server](#mcp-server)
+- [Zero dependencies](#zero-dependencies)
+- [Coverage](#coverage)
+- [Scope](#scope)
+- [License](#license)
+
 ## Three steps
 
 ```bash
