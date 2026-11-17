@@ -1,5 +1,10 @@
 # secretsweep · 中文说明
 
+[![tests](https://img.shields.io/badge/tests-436-brightgreen)](https://github.com/xuange-hu/secretsweep/actions)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![deps](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](https://github.com/xuange-hu/secretsweep/blob/main/pyproject.toml)
+
 [English](README.md) | 简体中文
 
 零依赖的**凭据泄露扫描器**：86 条厂商规则、熵检测、占位符分级、基线差分。
