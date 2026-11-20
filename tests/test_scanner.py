@@ -225,3 +225,23 @@ def test_column_is_one_based_and_inside_the_line(path):
     found = scan_text(AWS_LINE, path=path)
     assert found[0].column >= 1
     assert found[0].column <= len(AWS_LINE)
+
+
+
+def test_evidence_never_leaks_secret_crossing_truncate_boundary():
+    """CRITICAL regression: mask the full line BEFORE truncating evidence.
+
+    A secret starting past the 200-char cut used to survive verbatim into
+    evidence (the replace ran on the already-truncated string, where the
+    complete value no longer appeared). Evidence flows into text reports,
+    JSON, SARIF and CI step summaries — a leak scanner must never echo it.
+    """
+    secret = AWS_KEY  # 20 chars, matches aws-access-key-id
+    # non-word padding (for \b) puts the secret across the 200-char cut
+    line = "-" * 194 + " " + secret
+    found = scan_text(line + "\n", path="src/app.py")
+    aws = [f for f in found if f.rule == "aws-access-key-id"]
+    assert aws, "expected the provider rule to fire"
+    for f in aws:
+        assert secret not in (f.evidence or ""), "raw secret leaked into evidence"
+        assert "*" in (f.evidence or ""), "evidence should show the masked form"

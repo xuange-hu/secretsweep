@@ -231,9 +231,11 @@ def scan_text(text: str, path: str = "<stdin>", options: Options | None = None) 
             continue
 
         # Evidence is shown to humans and forwarded to agents: the secret itself
-        # must never survive into it.
+        # must never survive into it. Mask on the FULL line first, then truncate:
+        # truncating first lets a secret crossing the 200-char boundary survive
+        # verbatim (the replace would no longer find the complete value).
         masked = mask(value)
-        evidence = line.strip()[:200].replace(value, masked)
+        evidence = line.strip().replace(value, masked)[:200]
 
         findings.append(
             Finding(
